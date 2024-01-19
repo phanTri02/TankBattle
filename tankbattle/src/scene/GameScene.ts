@@ -1,4 +1,5 @@
 import {
+  Clock,
   HemisphereLight,
   PerspectiveCamera,
   Scene,
@@ -25,6 +26,8 @@ class GameScene {
 
   // game entities array
   private _gameEntities: GameEntity[] = [];
+
+  private _clock: Clock = new Clock();
 
   private constructor() {
     this._width = window.innerWidth;
@@ -84,6 +87,13 @@ class GameScene {
 
   public render = () => {
     requestAnimationFrame(this.render);
+    // obtain elapsed time between frams
+    const deltaT = this._clock.getDelta();
+    // update the tate of all entities
+    for (let index = 0; index < this._gameEntities.length; index++) {
+      const element = this._gameEntities[index];
+      element.update(deltaT); /// ????
+    }
     this._renderer.render(this._scene, this._camera);
   };
 }
