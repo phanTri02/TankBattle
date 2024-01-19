@@ -1,6 +1,9 @@
-import { Mesh, MeshStandardMaterial, Vector3 } from "three";
+import { Box3, Mesh, MeshStandardMaterial, Sphere, Vector3 } from "three";
 import GameEntity from "./GameEntity";
 import ResourceManager from "../utils/ResourceManager";
+import GameScene from "../scene/GameScene";
+import Bullet from "./Bullet";
+import ShootEffect from "../effects/ShootEffect";
 
 // helper to track keyboard state
 type KeyboardState = {
@@ -21,7 +24,7 @@ class PlayerTank extends GameEntity {
   };
 
   constructor(position: Vector3) {
-    super(position);
+    super(position, "player");
     // listen to the methods that track keyboard state
     window.addEventListener("keydown", this.handleKeyDown);
     window.addEventListener("keyup", this.handleKeyUp);
@@ -47,7 +50,7 @@ class PlayerTank extends GameEntity {
     }
   };
 
-  private handleKeyUp = (e: KeyboardEvent) => {
+  private handleKeyUp = async (e: KeyboardEvent) => {
     switch (e.key) {
       case "ArrowUp":
         this._keyboardState.UpPressed = false;
@@ -61,9 +64,32 @@ class PlayerTank extends GameEntity {
       case "ArrowRight":
         this._keyboardState.RightPressed = false;
         break;
+      case " ":
+        await this.shoot();
+        break;
       default:
         break;
     }
+  };
+
+  private shoot = async () => {
+    // create an offset position (shoot a bit ahead of the tank)
+    const offset = new Vector3(
+      Math.sin(this._rotation) * 0.45,
+      -Math.cos(this._rotation) * 0.45,
+      0.5
+    );
+    const shootingPosition = this._mesh.position.clone().add(offset);
+    // create and load the bullet
+    const bullet = new Bullet(shootingPosition, this._rotation);
+    await bullet.load();
+
+    // add effect
+    const shootEffect = new ShootEffect(shootingPosition, this._rotation);
+    await shootEffect.load();
+
+    GameScene.instance.addToScene(shootEffect);
+    GameScene.instance.addToScene(bullet);
   };
 
   public load = async () => {
@@ -72,12 +98,16 @@ class PlayerTank extends GameEntity {
     if (!tankModel) {
       throw "unable to get tank model";
     }
+
+    // entities using models will require a unique instance
+    const tankSceneData = tankModel.scene.clone();
+
     // the model contains the meshes we need for the scene
-    const tankBodyMesh = tankModel.scene.children.find(
+    const tankBodyMesh = tankSceneData.children.find(
       (m) => m.name === "Body"
     ) as Mesh;
 
-    const tankTurretMesh = tankModel.scene.children.find(
+    const tankTurretMesh = tankSceneData.children.find(
       (m) => m.name === "Turret"
     ) as Mesh;
 
@@ -108,6 +138,15 @@ class PlayerTank extends GameEntity {
     // add meshes as child of entity mesh
     this._mesh.add(tankBodyMesh);
     this._mesh.add(tankTurretMesh);
+
+    // create the collider for the tank
+    const collider = new Box3()
+      .setFromObject(this._mesh)
+      .getBoundingSphere(new Sphere(this._mesh.position.clone()));
+    // this creates a sphere around the tank which is easier to calculate with other collisions
+    // reduce the radius a bit
+    collider.radius *= 0.75;
+    this._collider = collider;
   };
 
   public update = (deltaT: number) => {
@@ -140,8 +179,36 @@ class PlayerTank extends GameEntity {
 
     this._rotation = computedRotation;
     this._mesh.setRotationFromAxisAngle(new Vector3(0, 0, 1), computedRotation);
+
+    // before updating the position check if there is a problem with the new one
+    const testingSphere = this._collider?.clone() as Sphere;
+    testingSphere.center.add(computedMovement);
+
+    // search for possible collisions
+    const colliders = GameScene.instance.gameEntities.filter(
+      (e) =>
+        e !== this &&
+        e.entityType !== "bullet" &&
+        e.collider &&
+        e.collider!.intersectsSphere(testingSphere)
+    );
+
+    // something is blocking the tank !
+    if (colliders.length) {
+      return;
+    }
+
     // update the current position by adding the movement
     this._mesh.position.add(computedMovement);
+    // update the collider as well
+    (this._collider as Sphere).center.add(computedMovement);
+
+    // make the camera follow the player tank
+    GameScene.instance.camera.position.set(
+      this._mesh.position.x,
+      this._mesh.position.y,
+      GameScene.instance.camera.position.z
+    );
   };
 }
 
