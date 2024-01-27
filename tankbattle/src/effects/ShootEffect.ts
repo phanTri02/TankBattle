@@ -1,17 +1,32 @@
 import { DodecahedronGeometry, Mesh, MeshPhongMaterial, Vector3 } from "three";
 import GameEntity from "../entities/GameEntity";
 import { randomIntInRange, randomSign } from "../utils/MathUtils";
+import { AudioListener, AudioLoader, PositionalAudio } from "three";
 
 class ShootEffect extends GameEntity {
   private _angle: number;
   private _fire = new Mesh();
   private _smoke = new Mesh();
-  private _size = 0.2;
+  private _size = 0.1;
   private _effectDuration = 1; // in seconds
+  private _shootSound: PositionalAudio;
 
   constructor(position: Vector3, angle: number) {
     super(position);
     this._angle = angle;
+
+    // initialize audio
+    const listener = new AudioListener();
+    this._shootSound = new PositionalAudio(listener);
+    const audioLoader = new AudioLoader();
+    audioLoader.load("./audio/axiom-boom.mp3", (buffer) => {
+      this._shootSound.setBuffer(buffer);
+      this._shootSound.setRefDistance(10); 
+      this._shootSound.play()
+    });
+
+    // add sound
+    this._mesh.add(this._shootSound);
   }
 
   public load = async () => {
@@ -22,7 +37,7 @@ class ShootEffect extends GameEntity {
       transparent: true,
     });
 
-    const fireMaterial = new MeshPhongMaterial({ color: 0xff4500 });
+    const fireMaterial = new MeshPhongMaterial({ transparent: true });
 
     // get a random number of particles
     const totalParticles = randomIntInRange(4, 9);
@@ -107,6 +122,8 @@ class ShootEffect extends GameEntity {
     });
 
     this._mesh.remove(this._smoke);
+    this._shootSound.stop();
+    this._shootSound.disconnect();
   };
 }
 

@@ -12,7 +12,7 @@ import GameScene from "../scene/GameScene";
 import ExplosionEffect from "../effects/ExplosionEffect";
 
 class EnemyTank extends GameEntity {
-  private _life = 100;
+  private _life = 40;
   private _rotation: number;
   private _moveSpeed = 1;
 

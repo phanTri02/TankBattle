@@ -152,7 +152,7 @@ class PlayerTank extends GameEntity {
   public update = (deltaT: number) => {
     let computedRotation = this._rotation;
     let computedMovement = new Vector3(); // final movement for this frame
-    const moveSpeed = 2; // in tiles per second
+    const moveSpeed = 1; // in tiles per second
 
     if (this._keyboardState.LeftPressed) {
       computedRotation += Math.PI * deltaT;

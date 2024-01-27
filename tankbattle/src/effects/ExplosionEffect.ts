@@ -1,5 +1,5 @@
 import {
-  DodecahedronGeometry,
+  SphereGeometry,
   Material,
   Mesh,
   MeshPhongMaterial,
@@ -7,24 +7,40 @@ import {
 } from "three";
 import GameEntity from "../entities/GameEntity";
 import { randomIntInRange, randomSign } from "../utils/MathUtils";
+import { AudioListener, AudioLoader, PositionalAudio } from "three";
 
 class ExplosionEffect extends GameEntity {
   private _size: number;
   private _effectDuration = 0.5;
   private _currentDuration: number;
   private _fireMesh: Mesh = new Mesh();
+  private _explosionSound: PositionalAudio;
 
   constructor(position: Vector3, size: number) {
     super(position);
     this._size = size;
     this._currentDuration = this._effectDuration;
+    
+    // initialze sound audio
+    const listener = new AudioListener();
+    this._explosionSound = new PositionalAudio(listener);
+    const audioLoader = new AudioLoader();
+    audioLoader.load("./audio/axiom-boom.mp3", (buffer) => {
+      this._explosionSound.setBuffer(buffer);
+      this._explosionSound.setRefDistance(10); 
+      this._explosionSound.play();
+    });
+
+    // add sound
+    this._mesh.add(this._explosionSound);
   }
+
 
   public load = async () => {
     // define generic particle geometry
-    const particleGeometry = new DodecahedronGeometry(this._size, 0);
+    const particleGeometry = new SphereGeometry(this._size, 0.5, 2, 2); 
     const totalParticles = randomIntInRange(7, 13);
-    const fireMaterial = new MeshPhongMaterial({ color: 0xff4500 });
+    const fireMaterial = new MeshPhongMaterial({ color: 0xfafafa });
 
     for (let i = 0; i < totalParticles; i++) {
       // random angle

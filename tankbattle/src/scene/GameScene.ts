@@ -79,6 +79,12 @@ class GameScene {
     const enemyTank = new EnemyTank(new Vector3(3, 3, 0));
     this._gameEntities.push(enemyTank);
 
+    const enemyTank2 = new EnemyTank(new Vector3(10, 10, 0));
+    this._gameEntities.push(enemyTank2);
+
+    const enemyTank3 = new EnemyTank(new Vector3(6, 6, 0));
+    this._gameEntities.push(enemyTank3);
+
     this.createWalls();
   }
 

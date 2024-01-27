@@ -21,7 +21,7 @@ class Bullet extends GameEntity {
   }
 
   public load = async () => {
-    const bulletGeometry = new SphereGeometry(0.085);
+    const bulletGeometry = new SphereGeometry(0.09);
     const bulletMaterial = new MeshPhongMaterial({ color: 0x262626 });
 
     this._mesh = new Mesh(bulletGeometry, bulletMaterial);
@@ -68,7 +68,7 @@ class Bullet extends GameEntity {
       // is there an enemy among the colliders ???
       const enemies = colliders.filter((c) => c.entityType === "enemy");
       if (enemies.length) {
-        (enemies[0] as EnemyTank).damage(20);
+        (enemies[0] as EnemyTank).damage(10);
       }
     }
   };
